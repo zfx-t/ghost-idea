@@ -16,7 +16,9 @@ console = Console()
 
 def stream_print(text: str, prefix: str = "", color: str = "blue", speed: float = 0.1):
     """流式打印文本，打字机效果"""
-    with Live("", console=console, refresh_per_second=30) as live:
+    with Live(
+        "", console=console, refresh_per_second=30, vertical_overflow="visible"
+    ) as live:
         output = Text()
         output.append(prefix, style=f"bold {color}")
         output.append(" ")
@@ -26,7 +28,6 @@ def stream_print(text: str, prefix: str = "", color: str = "blue", speed: float 
             output.append(char, style=color)
             live.update(output)
             time.sleep(speed)
-
 
 
 async def chat_loop(
@@ -66,19 +67,23 @@ async def chat_loop(
 
         if on_message:
             full_reply = ""
-            with Live("", console=console, refresh_per_second=30) as live:
-                output = Text()
-                output.append("助手:", style="bold blue")
-                output.append(" ")
+            output = Text()
+            output.append("助手:", style="bold blue")
+            output.append(" ")
+            with Live(
+                output,
+                console=console,
+                refresh_per_second=30,
+                vertical_overflow="visible",
+                transient=True,
+            ) as live:
                 async for chunk in on_message(messages):
                     full_reply += chunk
                     output.append(chunk, style="blue")
-                    live.update(output)
+                    live.update(output, refresh=True)
             messages.append({"role": "ai", "content": full_reply})
         else:
-            messages.append(
-                {"role": "ai", "content": "请提供 on_message 回调函数"}
-            )
+            messages.append({"role": "ai", "content": "请提供 on_message 回调函数"})
 
 
 if __name__ == "__main__":

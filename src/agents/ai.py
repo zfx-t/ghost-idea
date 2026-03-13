@@ -8,6 +8,7 @@ llm = init_chat_model(
     model_provider="openai",
     api_key=SILICONFLOW_API_KEY,
     base_url=SILICONFLOW_API_BASE,
+    max_tokens=2048,
     temperature=0.9,
 )
 
