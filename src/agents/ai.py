@@ -1,17 +1,16 @@
 from typing import Generator, Any, AsyncGenerator
 from langchain_core.messages import SystemMessage
-from langchain.chat_models import init_chat_model
+from langchain_deepseek import ChatDeepSeek
 from utils.env_utils import SILICONFLOW_API_KEY, SILICONFLOW_API_BASE
 from langchain.agents import create_agent
 # 如果你使用的是 langgraph，通常从这里导入 create_react_agent
-# from langgraph.prebuilt import create_react_agent 
+# from langgraph.prebuilt import create_react_agent
 
-# 1. 初始化 LLM
-llm = init_chat_model(
+# 1. 初始化 LLM (使用 ChatDeepSeek 以支持 reasoning_content 思维链提取)
+llm = ChatDeepSeek(
     model="moonshotai/Kimi-K2-Thinking",
-    model_provider="openai",
     api_key=SILICONFLOW_API_KEY,
-    base_url=SILICONFLOW_API_BASE,
+    api_base=SILICONFLOW_API_BASE,
     temperature=0.9, # 0.9 比较高，适合创意发散，结合下面的严密逻辑框架效果会很好
 )
 
