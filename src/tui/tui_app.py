@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """简单的 TUI 对话系统"""
 
-from typing import Callable, Optional, Generator
+from typing import Callable, Optional, Generator, AsyncGenerator
+import asyncio
 import time
 from rich.console import Console
 from rich.panel import Panel
@@ -28,13 +29,15 @@ def stream_print(text: str, prefix: str = "", color: str = "blue", speed: float 
 
 
 
-def chat_loop(title: str = "TUI 对话", on_message: Optional[Callable] = None) -> None:
+async def chat_loop(
+    title: str = "TUI 对话", on_message: Optional[Callable] = None
+) -> None:
     """
-    对话循环
+    异步 TUI 对话循环，支持实时流式显示
 
     Args:
         title: 对话框标题
-        on_message: 回调函数，接收用户消息并返回回复
+        on_message: 异步回调函数，接收消息历史列表，返回 AsyncGenerator[str, None]
     """
     messages = []
 
@@ -43,14 +46,12 @@ def chat_loop(title: str = "TUI 对话", on_message: Optional[Callable] = None) 
         console.print(Panel(title, border_style="cyan", box=box.DOUBLE))
         console.print()
 
-        # 显示历史消息
         for msg in messages[-8:]:
             role = "你" if msg["role"] == "user" else "助手"
             color = "green" if msg["role"] == "user" else "blue"
             console.print(f"[bold {color}]{role}:[/] {msg['content']}")
         console.print()
 
-        # 获取输入
         try:
             user_input = Prompt.ask("[yellow]输入[/yellow]")
         except (KeyboardInterrupt, EOFError):
@@ -63,30 +64,21 @@ def chat_loop(title: str = "TUI 对话", on_message: Optional[Callable] = None) 
 
         messages.append({"role": "user", "content": user_input})
 
-        # 调用回调或默认回复
         if on_message:
-            reply = on_message(user_input)
-        else:
-            reply = f"收到：{user_input}"
-
-        # 流式显示回复
-        console.print()
-        if isinstance(reply, Generator):
-            # 支持生成器流式输出
             full_reply = ""
             with Live("", console=console, refresh_per_second=30) as live:
                 output = Text()
                 output.append("助手:", style="bold blue")
                 output.append(" ")
-                for chunk in reply:
+                async for chunk in on_message(messages):
                     full_reply += chunk
                     output.append(chunk, style="blue")
                     live.update(output)
-                    time.sleep(0.1)
-            messages.append({"role": "assistant", "content": full_reply})
+            messages.append({"role": "ai", "content": full_reply})
         else:
-            stream_print(reply, prefix="助手:", color="blue")
-            messages.append({"role": "assistant", "content": reply})
+            messages.append(
+                {"role": "ai", "content": "请提供 on_message 回调函数"}
+            )
 
 
 if __name__ == "__main__":
