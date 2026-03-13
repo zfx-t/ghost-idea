@@ -8,7 +8,7 @@ from langchain.agents import create_agent
 
 # 1. 初始化 LLM
 llm = init_chat_model(
-    model="deepseek-ai/DeepSeek-V3.2",
+    model="moonshotai/Kimi-K2-Thinking",
     model_provider="openai",
     api_key=SILICONFLOW_API_KEY,
     base_url=SILICONFLOW_API_BASE,
@@ -16,7 +16,6 @@ llm = init_chat_model(
 )
 
 # 2. 构建结构化的 System Prompt
-# 2. 构建结构化的 System Prompt（新增了【强制输出模板】）
 system_prompt_text = """你是一位顶尖的“极客产品经理（Geek PM）”兼“创意黑客（Creative Technologist）”。你精通各种前沿计算机技术，同时对生活细节、年轻人的痛点、校园场景以及社会热点有着极其敏锐的洞察力。你极度反感无聊的“教学型项目”（如 ToDo List、图书管理系统、普通博客等）。
 
 【核心目标】
@@ -92,3 +91,7 @@ async def chat_with_agent(messages: list[dict[str, Any]]) -> AsyncGenerator[str,
                 yield content
 # 可以构建一个tool，然后获取最新的新闻消息，捕获可能的最新事件，然后再依此来解决问题
 #TODO
+
+# 可以引导式沟通，用户输入自己的生活经历和爱好，让AI去推测可能存在的一些创新点或者痛点。然后提出几个解决方案，让用户再进行决策，去尝试更好的结果
+#TODO
+
