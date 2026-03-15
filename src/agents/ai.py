@@ -22,7 +22,7 @@ llm = ChatOpenAI(
     model="qwen3.5-plus",
     api_key=DASHSCOPE_API_KEY,
     base_url=DASHCOPE_API_BASE,
-    temperature=0.1,
+    temperature=1.0,
 )
 
 # 绑定工具的 LLM (用于前期的聊天和发散)
