@@ -5,28 +5,22 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from agents.tools import tools
-from agents.response import AgentResponse,system_prompt_text
-from utils.env_utils import SILICONFLOW_API_KEY, SILICONFLOW_API_BASE, DASHSCOPE_API_KEY, DASHCOPE_API_BASE
+from agents.response import AgentResponse, system_prompt_template
+from agents.ciyun import CiyunSingleton
+from utils.env_utils import (
+    SILICONFLOW_API_KEY,
+    SILICONFLOW_API_BASE,
+    DASHSCOPE_API_KEY,
+    DASHCOPE_API_BASE,
+)
 from langchain.agents import create_agent
-# 如果你使用的是 langgraph，通常从这里导入 create_react_agent
-# from langgraph.prebuilt import create_react_agent
 
-# 1. 初始化 LLM (使用 ChatDeepSeek 以支持 reasoning_content 思维链提取)
-# llm = ChatDeepSeek(
-#     model="moonshotai/Kimi-K2-Thinking",
-#     api_key=SILICONFLOW_API_KEY,
-#     api_base=SILICONFLOW_API_BASE,
-#     temperature=0.9, # 0.9 比较高，适合创意发散，结合下面的严密逻辑框架效果会很好
-# )
 llm = ChatOpenAI(
     model="qwen3.5-plus",
     api_key=DASHSCOPE_API_KEY,
     base_url=DASHCOPE_API_BASE,
     temperature=1.0,
 )
-
-# 绑定工具的 LLM (用于前期的聊天和发散)
-llm_with_tools = llm.bind_tools(tools)
 # 绑定结构化输出的 LLM (用于最终的收敛定稿)
 parser = PydanticOutputParser(pydantic_object=AgentResponse)
 prompt = PromptTemplate.from_template(
@@ -40,22 +34,25 @@ prompt = PromptTemplate.from_template(
 prompt = prompt.partial(format_instructions=parser.get_format_instructions())
 llm_with_structured_output = prompt | llm | parser
 
-# 3. 实例化 SystemMessage
-sysmsg = SystemMessage(content=system_prompt_text)
-
-# 4. 创建 Agent 
-# 注意：具体的传参方式取决于你使用的 create_agent 是怎么封装的。
-# 如果是 LangGraph 的 create_react_agent，通常是通过 state_modifier 传入：
+# 3. 创建 Agent (system_prompt 会在每次调用时动态注入词云)
 agent = create_agent(
     llm,
-    tools=tools,
-    system_prompt=sysmsg
+    # tools=tools,
+    system_prompt=None,  # 将在 chat_with_agent 中动态设置
 )
 
 
 async def chat_with_agent(messages: list[dict[str, Any]]) -> AsyncGenerator[str, None]:
+    # 从单例中获取词云数据
+    ciyun_data = CiyunSingleton.ciyun_tags_string
+    if not ciyun_data:
+        ciyun_data = "暂无词云数据"
+
+    # 动态注入词云到模板
+    system_prompt_text = system_prompt_template.format(Word_Cloud_Tags=ciyun_data)
+    messages.insert(0, {"role": "system", "content": system_prompt_text})
     """异步流式对话，包含原生思考过程 (token 级输出)"""
-    
+
     # 状态标记：用来判断是否需要输出 <think> 标签
     is_thinking = False
     has_finished_thinking = False
@@ -71,7 +68,7 @@ async def chat_with_agent(messages: list[dict[str, Any]]) -> AsyncGenerator[str,
                 if not is_thinking:
                     yield "<think>\n"
                     is_thinking = True
-                
+
                 # 持续输出思考过程
                 yield reasoning
 
@@ -82,8 +79,6 @@ async def chat_with_agent(messages: list[dict[str, Any]]) -> AsyncGenerator[str,
                 if is_thinking and not has_finished_thinking:
                     yield "\n</think>\n\n"
                     has_finished_thinking = True
-                
+
                 # 持续输出正式内容
                 yield content
-
-
