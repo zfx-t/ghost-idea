@@ -1,16 +1,59 @@
-# ghost-idea
-使用AI辅助生成各种想法
+# Ghost Idea
 
+AI 辅助生成想法的项目
 
-记录一些基本思路：
+## 项目结构
 
-主要解决问题：当我学习某项东西后，我需要更好的练手，而不是将一些现成的东西誊抄一遍，那挺无趣的。所以就需要有一些idea。去创作或者一些思维的迸发。但是说实话这挺难的。于是我灵光一动。为什么不从解决自己的麻烦入手呢？于是这个项目开始了。
+```
+ghost-idea/
+├── frontend/          # React 前端
+└── src/              # Python 后端
+    ├── api.py        # FastAPI 接口
+    ├── main.py       # TUI 入口
+    └── agents/       # AI Agent 逻辑
+```
 
-基本技术栈： langchain+客户端（后面可以慢慢补充）
+## 快速开始
 
-一些问题的解决思路：
+### 1. 安装依赖
 
-1. template，设置回答的模板，要求AI按照我的要求回答，不能反问，只能怎么样...
-2. 其次他应当可以从我的提问中捕捉出关键词，然后根据这些关键词以及创作出一些奇怪的词语来尝试去解决这个问题（鬼点子）
-3. 它可以自己去学习一些前沿或者鬼畜的关键词。然后再解决问题的时候可以根据这种思路去完成。
-4. 目前他可以很简单，更多的只是帮助我巩固我学习的内容，同时激发学习兴趣。但以后的功能可以更加奇怪一点？正如项目名，as a ghost to do.
+```bash
+# 安装 Python 依赖
+pip install -r requirements.txt
+
+# 安装前端依赖
+cd frontend
+npm install
+```
+
+### 2. 配置环境变量
+
+创建 `.env` 文件，配置 API Key：
+
+```env
+DASHSCOPE_API_KEY=your_api_key
+DASHCOPE_API_BASE=https://dashscope.aliyuncs.com/compatible-mode/v1
+```
+
+### 3. 启动服务
+
+**终端 1 - 启动后端 API：**
+```bash
+python src/api.py
+```
+
+**终端 2 - 启动前端：**
+```bash
+cd frontend
+npm run dev
+```
+
+### 4. 访问
+
+打开浏览器访问：http://localhost:5173
+
+## 功能
+
+- 💬 AI 对话沟通
+- 🎨 词云标签生成
+- 💡 创意想法生成
