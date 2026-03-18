@@ -7,6 +7,7 @@ export const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState<Message | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -32,6 +33,15 @@ export const ChatInterface: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
+    const assistantMessageId = (Date.now() + 1).toString();
+    
+    setStreamingMessage({
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+    });
+
     try {
       const response = await fetch('http://localhost:8000/chat', {
         method: 'POST',
@@ -41,24 +51,75 @@ export const ChatInterface: React.FC = () => {
         body: JSON.stringify({ message: userMessage.content }),
       });
 
-      const data = await response.json();
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: data.response || data.message || '暂无回复',
-        timestamp: new Date(),
-      };
+      if (!reader) throw new Error('No reader');
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      let accumulatedContent = '';
+      let hasReceivedFirstChunk = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.chunk) {
+                accumulatedContent += parsed.chunk;
+                
+                if (!hasReceivedFirstChunk) {
+                  hasReceivedFirstChunk = true;
+                }
+                
+                setStreamingMessage({
+                  id: assistantMessageId,
+                  role: 'assistant',
+                  content: accumulatedContent,
+                  timestamp: new Date(),
+                });
+              }
+              if (parsed.error) {
+                throw new Error(parsed.error);
+              }
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+
+      if (accumulatedContent) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: assistantMessageId,
+            role: 'assistant',
+            content: accumulatedContent,
+            timestamp: new Date(),
+          },
+        ]);
+        setStreamingMessage(null);
+      }
     } catch (error) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: '连接服务器失败，请确保后端服务已启动',
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMessageId,
+          role: 'assistant',
+          content: '连接服务器失败，请确保后端服务已启动',
+          timestamp: new Date(),
+        },
+      ]);
+      setStreamingMessage(null);
     } finally {
       setIsLoading(false);
     }
@@ -72,29 +133,34 @@ export const ChatInterface: React.FC = () => {
       </div>
 
       <div className="messages-container">
-        {messages.length === 0 ? (
+        {messages.length === 0 && !streamingMessage ? (
           <div className="welcome-message">
             <p>👋 你好！我是 Ghost Idea</p>
             <p>有什么创意想法想和我聊聊吗？</p>
           </div>
         ) : (
-          messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
-          ))
-        )}
-        {isLoading && (
-          <div className="chat-message assistant">
-            <div className="message-header">
-              <span className="role">🤖 AI</span>
-            </div>
-            <div className="message-content">
-              <div className="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
+          <>
+            {messages.map((message) => (
+              <ChatMessage key={message.id} message={message} />
+            ))}
+            {streamingMessage && (
+              <ChatMessage key={streamingMessage.id} message={streamingMessage} />
+            )}
+            {isLoading && !streamingMessage && (
+              <div className="chat-message assistant">
+                <div className="message-header">
+                  <span className="role">🤖 AI</span>
+                </div>
+                <div className="message-content">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
         <div ref={messagesEndRef} />
       </div>
