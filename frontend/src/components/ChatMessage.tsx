@@ -1,4 +1,6 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Message } from '../types';
 
 interface ChatMessageProps {
@@ -16,7 +18,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           {message.timestamp.toLocaleTimeString()}
         </span>
       </div>
-      <div className="message-content">{message.content}</div>
+      <div className="message-content markdown-content">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {message.content}
+        </ReactMarkdown>
+      </div>
     </div>
   );
 };
