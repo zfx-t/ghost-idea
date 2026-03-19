@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
+import { Send, Cloud } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
+import { WordCloud } from './WordCloud';
 import type { Message } from '../types';
 
 export const ChatInterface: React.FC = () => {
@@ -8,6 +9,8 @@ export const ChatInterface: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(null);
+  const [selectedWords, setSelectedWords] = useState<string[]>([]);
+  const [showWordCloud, setShowWordCloud] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -22,10 +25,14 @@ export const ChatInterface: React.FC = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    const messageContent = selectedWords.length > 0
+      ? `${input.trim()} [词云：${selectedWords.join(', ')}]`
+      : input.trim();
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim(),
+      content: messageContent,
       timestamp: new Date(),
     };
 
@@ -130,9 +137,18 @@ export const ChatInterface: React.FC = () => {
       <div className="chat-header">
         <h1>👻 Ghost Idea</h1>
         <p>AI 创意助手</p>
+        <button
+          className={`wordcloud-toggle ${showWordCloud ? 'active' : ''}`}
+          onClick={() => setShowWordCloud(!showWordCloud)}
+          title="词云"
+        >
+          <Cloud size={20} />
+        </button>
       </div>
 
-      <div className="messages-container">
+      <div className="chat-body">
+        <div className={`messages-wrapper ${showWordCloud ? 'with-sidebar' : ''}`}>
+          <div className="messages-container">
         {messages.length === 0 && !streamingMessage ? (
           <div className="welcome-message">
             <p>👋 你好！我是 Ghost Idea</p>
@@ -165,7 +181,7 @@ export const ChatInterface: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <form className="input-form" onSubmit={handleSubmit}>
+        <form className="input-form" onSubmit={handleSubmit}>
         <input
           type="text"
           value={input}
@@ -177,6 +193,14 @@ export const ChatInterface: React.FC = () => {
           <Send size={20} />
         </button>
       </form>
+        </div>
+
+        {showWordCloud && (
+          <div className="wordcloud-sidebar">
+            <WordCloud onWordsSelected={setSelectedWords} />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

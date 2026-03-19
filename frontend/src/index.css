@@ -34,7 +34,10 @@ body {
   padding: 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
 }
 
 .chat-header h1 {
@@ -47,11 +50,75 @@ body {
   opacity: 0.9;
 }
 
+.wordcloud-toggle {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+}
+
+.wordcloud-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.wordcloud-toggle.active {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.chat-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.messages-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.messages-wrapper.with-sidebar {
+  margin-right: 0;
+}
+
 .messages-container {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
   background: #f5f5f5;
+}
+
+.wordcloud-sidebar {
+  width: 320px;
+  background: white;
+  border-left: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 320px;
+    opacity: 1;
+  }
 }
 
 .welcome-message {
@@ -316,4 +383,78 @@ body {
 
 .chat-message.user .markdown-content a {
   color: #fff;
+}
+
+.word-cloud-container {
+  padding: 16px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.word-cloud-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.word-cloud-header h3 {
+  font-size: 16px;
+  color: #333;
+  margin: 0;
+}
+
+.generate-button {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.generate-button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.generate-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.word-cloud-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.word-cloud-svg {
+  max-width: 100%;
+}
+
+.selected-words {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 8px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.selected-words p {
+  margin: 0;
+  font-size: 13px;
+  color: #667eea;
+  font-weight: 500;
+  word-break: break-word;
 }
